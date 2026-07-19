@@ -38,7 +38,7 @@ echo [3/3] Creating Windows Scheduler Task...
 schtasks /delete /tn "SapSan_LAN_Sync_Server" /f >nul 2>&1
 
 :: Create new task using PowerShell (robust escaping and sets working directory)
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$scriptDir = '%~dp0'.TrimEnd('\'); $nodePath = (Get-Command node.exe -ErrorAction SilentlyContinue).Source; if (-not $nodePath) { $nodePath = 'node' }; $Action = New-ScheduledTaskAction -Execute $nodePath -Argument 'server.js' -WorkingDirectory $scriptDir; $Trigger = New-ScheduledTaskTrigger -AtStartup; $Principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest; $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; Register-ScheduledTask -TaskName 'SapSan_LAN_Sync_Server' -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Force" >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$scriptDir = '%~dp0'.TrimEnd('\'); $nodePath = (Get-Command node.exe -ErrorAction SilentlyContinue).Source; if (-not $nodePath) { $nodePath = 'node' }; $Action = New-ScheduledTaskAction -Execute $nodePath -Argument 'server.js' -WorkingDirectory $scriptDir; $Trigger = New-ScheduledTaskTrigger -AtStartup; $Principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest; $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries; Register-ScheduledTask -TaskName 'SapSan_LAN_Sync_Server' -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Force"
 
 if %errorLevel% equ 0 (
     echo.
@@ -48,13 +48,19 @@ if %errorLevel% equ 0 (
     echo.
     echo 1. The server is configured as a background system task.
     echo 2. It will start automatically whenever this PC turns on.
-    echo    (No user needs to log in, and no window will clutter your screen)
+    echo    No user needs to log in, and no window will clutter your screen.
     echo 3. The Windows Firewall has been configured to allow port 3001.
     echo.
     echo Starting the background server task now...
     schtasks /run /tn "SapSan_LAN_Sync_Server" >nul 2>&1
     echo.
     echo Server is now running silently in the background!
+    echo.
+    echo ==========================================================
+    echo   ON OTHER PCs, enter one of these as the Server Address:
+    echo ==========================================================
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' -and $_.InterfaceAlias -notlike '*Virtual*' -and $_.InterfaceAlias -notlike '*vEthernet*' } | ForEach-Object { Write-Host '  http://' $_.IPAddress ':3001' }"
+    echo ==========================================================
 ) else (
     echo.
     echo [ERROR] Failed to create the startup task.

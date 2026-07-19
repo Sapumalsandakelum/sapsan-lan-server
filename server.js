@@ -16,26 +16,27 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STORE_FILE = path.join(__dirname, 'sync-store.json');
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: '*', methods: ['GET', 'POST'] }));
 app.use(express.json());
+app.get('/', (req, res) => res.send('✅ SapSan LAN Sync Server is running.'));
 
 // Serve static client files if they exist in the 'client' directory (POS frontend)
 const clientPath = path.join(__dirname, 'client');
 if (fs.existsSync(clientPath)) {
   console.log(`📂 Serving client files from: ${clientPath}`);
   app.use(express.static(clientPath));
-  
-  // Single Page App fallback routing
-  app.get('*', (req, res, next) => {
+  // SPA fallback — must come AFTER socket.io is mounted, so register it late
+  app.use((req, res, next) => {
     if (req.path.startsWith('/socket.io/')) return next();
     res.sendFile(path.join(clientPath, 'index.html'));
   });
-} else {
-  app.get('/', (req, res) => res.send('✅ SapSan LAN Sync Server is running. (Place built client in /client to host POS app locally)'));
 }
 
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: '*' } });
+const io = new Server(httpServer, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+  transports: ['websocket', 'polling'],
+});
 
 // store shape: { [tableName]: { [globalId]: { operation, payload, updatedAt } } }
 const loadStore = () => {
