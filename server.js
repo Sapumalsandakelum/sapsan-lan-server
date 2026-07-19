@@ -1,19 +1,17 @@
-import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import cors from 'cors';
+const express = require('express');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
 
 const app = express();
 app.use(cors({ origin: '*' }));
-app.get('/', (req, res) => res.send('✅ SapSan Sync Server is running.'));
+app.get('/', (req, res) => res.send('SapSan Sync Server is running.'));
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
-  transports: ['websocket', 'polling'],
 });
 
-// In-memory store (resets on redeploy - fine for sync relay)
 const store = {};
 
 io.on('connection', (socket) => {
@@ -45,5 +43,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ SapSan Sync Server running on port ${PORT}`);
+  console.log('SapSan Sync Server running on port ' + PORT);
 });
